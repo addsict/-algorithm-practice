@@ -22,7 +22,6 @@ type Entry struct {
 }
 
 func (e *Entry) String() string {
-	// return fmt.Sprintf("Entry{value: %v, prev: %v, next: %v}", e.value, e.prev, e.next)
 	return fmt.Sprintf("Entry{key:%s, value: %v}", e.key, e.value)
 }
 
@@ -129,6 +128,5 @@ func (c *LruCache) RecentlyUsedKeys() []string {
 }
 
 func (c *LruCache) String() string {
-	// return fmt.Sprintf("cache: %s, capacity: %d, size: %d, keys: %s", c.cache, c.capacity, c.size, strings.Join(keys, " -> "))
 	return fmt.Sprintf("capacity: %d, size: %d, keys: %s", c.capacity, len(c.cache), strings.Join(c.RecentlyUsedKeys(), " -> "))
 }

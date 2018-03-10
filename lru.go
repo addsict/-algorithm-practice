@@ -2,7 +2,6 @@ package lru
 
 import (
 	"fmt"
-	"log"
 	"strings"
 )
 
@@ -48,7 +47,6 @@ func (c *LruCache) Set(key string, value interface{}) {
 
 	if len(c.cache) == int(c.capacity) {
 		// eviction
-		log.Printf("eviction happen: key=%s", key)
 		tail := c.tail
 		delete(c.cache, tail.key)
 		c.tail = tail.prev
@@ -91,10 +89,22 @@ func (c *LruCache) GetString(key string) (string, bool) {
 	e := c.cache[key]
 	if e != nil {
 		if str, ok := e.value.(string); ok {
+			c.Set(key, e.value) // for updating internal structure
 			return str, true
 		}
 	}
 	return "", false
+}
+
+func (c *LruCache) GetInt(key string) (int, bool) {
+	e := c.cache[key]
+	if e != nil {
+		if i, ok := e.value.(int); ok {
+			c.Set(key, e.value) // for updating internal structure
+			return i, true
+		}
+	}
+	return 0, false
 }
 
 func (c *LruCache) RecentlyUsedKeys() []string {

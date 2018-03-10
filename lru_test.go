@@ -1,6 +1,7 @@
 package lru
 
 import (
+	"sync"
 	"testing"
 )
 
@@ -46,6 +47,49 @@ func TestLruCache(t *testing.T) {
 			c.Remove("b")
 			c.Set("d", "hoge")
 		}, []string{"d", "c", "a"})
+
+		checkInternalLinkedList(t, func(c *LruCache) {
+			c.Set("a", "foo")
+			c.Set("a", "bar")
+			c.Set("a", "baz")
+			c.Set("a", "hoge")
+		}, []string{"a"})
+	})
+
+	t.Run("concurrent access", func(t *testing.T) {
+		c := NewLruCache(3)
+		var wg sync.WaitGroup
+
+		wg.Add(1)
+		go func() {
+			for i := 0; i < 100; i++ {
+				c.Set("a", i)
+			}
+			wg.Done()
+		}()
+
+		wg.Add(1)
+		go func() {
+			for i := 0; i < 100; i++ {
+				c.Set("b", i)
+			}
+			wg.Done()
+		}()
+
+		wg.Add(1)
+		go func() {
+			for i := 0; i < 100; i++ {
+				c.Set("c", i)
+			}
+			wg.Done()
+		}()
+
+		wg.Wait()
+		if c.head != nil && c.head.next != nil && c.head.next.next != nil && c.head.next.next.next == nil && c.head.next.next == c.tail {
+			// valid structure
+		} else {
+			t.Errorf("invalid structure: %s", c.head)
+		}
 	})
 }
 

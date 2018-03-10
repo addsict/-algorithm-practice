@@ -3,6 +3,7 @@ package lru
 import (
 	"fmt"
 	"strings"
+	"sync"
 )
 
 type LruCache struct {
@@ -10,6 +11,7 @@ type LruCache struct {
 	capacity uint
 	head     *Entry
 	tail     *Entry
+	m        *sync.Mutex
 }
 
 type Entry struct {
@@ -28,22 +30,14 @@ func NewLruCache(capacity uint) *LruCache {
 	return &LruCache{
 		cache:    make(map[string]*Entry, capacity),
 		capacity: capacity,
+		m:        new(sync.Mutex),
 	}
 }
 
-// TODO: goroutine safe
 func (c *LruCache) Set(key string, value interface{}) {
-	e := &Entry{
-		key:   key,
-		value: value,
-	}
+	c.m.Lock()
 
-	if c.head != nil {
-		c.Remove(key)
-		head := c.head
-		head.prev = e
-		e.next = head
-	}
+	c.remove(key)
 
 	if len(c.cache) == int(c.capacity) {
 		// eviction
@@ -53,14 +47,33 @@ func (c *LruCache) Set(key string, value interface{}) {
 		tail.prev.next = nil
 	}
 
+	e := &Entry{
+		key:   key,
+		value: value,
+	}
 	c.cache[key] = e
+
+	if c.head != nil {
+		head := c.head
+		head.prev = e
+		e.next = head
+	}
+
 	c.head = e
 	if c.tail == nil {
 		c.tail = e
 	}
+
+	c.m.Unlock()
 }
 
 func (c *LruCache) Remove(key string) {
+	c.m.Lock()
+	c.remove(key)
+	c.m.Unlock()
+}
+
+func (c *LruCache) remove(key string) {
 	if c.cache[key] == nil {
 		return
 	}

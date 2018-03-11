@@ -2,11 +2,10 @@ package base64
 
 import "testing"
 
-func TestEncodeBase64(t *testing.T) {
-
+func TestBase64(t *testing.T) {
 	tests := []struct {
-		input    string
-		expected string
+		decoded string
+		encoded string
 	}{
 		{"", ""},
 		{"ABCD", "QUJDRA=="},
@@ -15,10 +14,21 @@ func TestEncodeBase64(t *testing.T) {
 		{"hello\nworld\n", "aGVsbG8Kd29ybGQK"},
 	}
 
-	for _, test := range tests {
-		got := EncodeBase64(test.input)
-		if got != test.expected {
-			t.Errorf("encode %s, expected %s, but got %s", test.input, test.expected, got)
+	t.Run("EncodeBase64", func(t *testing.T) {
+		for _, test := range tests {
+			got := EncodeBase64(test.decoded)
+			if got != test.encoded {
+				t.Errorf("encode %s, expected %s, but got %s", test.decoded, test.encoded, got)
+			}
 		}
-	}
+	})
+
+	t.Run("DecodeBase64", func(t *testing.T) {
+		for _, test := range tests {
+			got := DecodeBase64(test.encoded)
+			if got != test.decoded {
+				t.Errorf("decode %s, expected %s, but got %s", test.encoded, test.decoded, got)
+			}
+		}
+	})
 }

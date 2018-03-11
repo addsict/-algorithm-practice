@@ -64,33 +64,24 @@ func DecodeBase64(text string) string {
 
 	var i uint32
 	for i = 0; i < uint32(len(byteText)/4); i++ {
-		tmp := uint32(rConvertMap[rune(byteText[i*4+0])])<<24 |
-			uint32(rConvertMap[rune(byteText[i*4+1])])<<16 |
-			uint32(rConvertMap[rune(byteText[i*4+2])])<<8 |
-			uint32(rConvertMap[rune(byteText[i*4+3])])<<0
-		b := uint32(uint8(tmp>>24)<<2|(0x03&(uint8(tmp>>16)>>4)))<<16 |
-			uint32(uint8(tmp>>16)<<4|(0x0f&(uint8(tmp>>8)>>2)))<<8 |
-			uint32(uint8(tmp>>8)<<6|(0x3f&(uint8(tmp>>0)>>0)))<<0
+		b1 := uint8((rConvertMap[rune(byteText[i*4+0])] << 2) | (0x03 & (rConvertMap[rune(byteText[i*4+1])] >> 4)))
+		b2 := uint8((rConvertMap[rune(byteText[i*4+1])] << 4) | (0x0f & (rConvertMap[rune(byteText[i*4+2])] >> 2)))
+		b3 := uint8((rConvertMap[rune(byteText[i*4+2])] << 6) | (0x3f & (rConvertMap[rune(byteText[i*4+3])] >> 0)))
 
-		decoded = append(decoded, rune(uint8(b>>16)))
-		decoded = append(decoded, rune(uint8(b>>8)))
-		decoded = append(decoded, rune(uint8(b>>0)))
+		decoded = append(decoded, rune(b1))
+		decoded = append(decoded, rune(b2))
+		decoded = append(decoded, rune(b3))
 	}
 
 	if mod := len(byteText) % 4; mod != 0 {
 		if mod == 2 {
-			tmp := uint32(rConvertMap[rune(byteText[i*4+0])])<<8 |
-				uint32(rConvertMap[rune(byteText[i*4+1])])<<0
-			b := uint32(uint8(tmp>>8)<<2 | (0x03 & (uint8(tmp>>0) >> 4)))
-			decoded = append(decoded, rune(uint8(b>>0)))
+			b1 := uint8((rConvertMap[rune(byteText[i*4+0])] << 2) | (0x03 & (rConvertMap[rune(byteText[i*4+1])] >> 4)))
+			decoded = append(decoded, rune(b1))
 		} else if mod == 3 {
-			tmp := uint32(rConvertMap[rune(byteText[i*4+0])])<<16 |
-				uint32(rConvertMap[rune(byteText[i*4+1])])<<8 |
-				uint32(rConvertMap[rune(byteText[i*4+2])])<<0
-			b := uint32(uint8(tmp>>16)<<2|(0x03&(uint8(tmp>>8)>>4)))<<8 |
-				uint32(uint8(tmp>>8)<<4|(0x0f&(uint8(tmp>>0)>>2)))<<0
-			decoded = append(decoded, rune(uint8(b>>8)))
-			decoded = append(decoded, rune(uint8(b>>0)))
+			b1 := uint8((rConvertMap[rune(byteText[i*4+0])] << 2) | (0x03 & (rConvertMap[rune(byteText[i*4+1])] >> 4)))
+			b2 := uint8((rConvertMap[rune(byteText[i*4+1])] << 4) | (0x0f & (rConvertMap[rune(byteText[i*4+2])] >> 2)))
+			decoded = append(decoded, rune(b1))
+			decoded = append(decoded, rune(b2))
 		}
 	}
 

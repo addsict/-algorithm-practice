@@ -1,7 +1,6 @@
 package base64
 
 import (
-	"encoding/binary"
 	"strings"
 )
 
@@ -33,7 +32,7 @@ func EncodeBase64(text string) string {
 
 	var i uint32
 	for i = 0; i < uint32(len(byteText)/3); i++ {
-		b := binary.BigEndian.Uint32([]byte{0x00, byteText[i*3+0], byteText[i*3+1], byteText[i*3+2]})
+		b := uint32(byteText[i*3+0])<<16 | uint32(byteText[i*3+1])<<8 | uint32(byteText[i*3+2])<<0
 		encoded = append(encoded, convertMap[0x3f&uint8(b>>18)])
 		encoded = append(encoded, convertMap[0x3f&uint8(b>>12)])
 		encoded = append(encoded, convertMap[0x3f&uint8(b>>6)])
@@ -42,13 +41,13 @@ func EncodeBase64(text string) string {
 
 	if mod := len(byteText) % 3; mod != 0 {
 		if mod == 1 {
-			b := binary.BigEndian.Uint32([]byte{0x00, 0x00, byteText[i*3+0], 0x00})
+			b := uint32(byteText[i*3+0]) << 8
 			encoded = append(encoded, convertMap[0x3f&uint8(b>>10)])
 			encoded = append(encoded, convertMap[0x3f&uint8(b>>4)])
 			encoded = append(encoded, '=')
 			encoded = append(encoded, '=')
 		} else if mod == 2 {
-			b := binary.BigEndian.Uint32([]byte{0x00, byteText[i*3+0], byteText[i*3+1], 0x00})
+			b := uint32(byteText[i*3+0])<<16 | uint32(byteText[i*3+1])<<8
 			encoded = append(encoded, convertMap[0x3f&uint8(b>>18)])
 			encoded = append(encoded, convertMap[0x3f&uint8(b>>12)])
 			encoded = append(encoded, convertMap[0x3f&uint8(b>>6)])
@@ -65,18 +64,14 @@ func DecodeBase64(text string) string {
 
 	var i uint32
 	for i = 0; i < uint32(len(byteText)/4); i++ {
-		tmp := binary.BigEndian.Uint32([]byte{
-			rConvertMap[rune(byteText[i*4+0])],
-			rConvertMap[rune(byteText[i*4+1])],
-			rConvertMap[rune(byteText[i*4+2])],
-			rConvertMap[rune(byteText[i*4+3])],
-		})
-		b := binary.BigEndian.Uint32([]byte{
-			0x00,
-			uint8(tmp>>24)<<2 | (0x03 & (uint8(tmp>>16) >> 4)),
-			uint8(tmp>>16)<<4 | (0x0f & (uint8(tmp>>8) >> 2)),
-			uint8(tmp>>8)<<6 | (0x3f & (uint8(tmp>>0) >> 0)),
-		})
+		tmp := uint32(rConvertMap[rune(byteText[i*4+0])])<<24 |
+			uint32(rConvertMap[rune(byteText[i*4+1])])<<16 |
+			uint32(rConvertMap[rune(byteText[i*4+2])])<<8 |
+			uint32(rConvertMap[rune(byteText[i*4+3])])<<0
+		b := uint32(uint8(tmp>>24)<<2|(0x03&(uint8(tmp>>16)>>4)))<<16 |
+			uint32(uint8(tmp>>16)<<4|(0x0f&(uint8(tmp>>8)>>2)))<<8 |
+			uint32(uint8(tmp>>8)<<6|(0x3f&(uint8(tmp>>0)>>0)))<<0
+
 		decoded = append(decoded, rune(uint8(b>>16)))
 		decoded = append(decoded, rune(uint8(b>>8)))
 		decoded = append(decoded, rune(uint8(b>>0)))
@@ -84,32 +79,16 @@ func DecodeBase64(text string) string {
 
 	if mod := len(byteText) % 4; mod != 0 {
 		if mod == 2 {
-			tmp := binary.BigEndian.Uint32([]byte{
-				0x00,
-				0x00,
-				rConvertMap[rune(byteText[i*4+0])],
-				rConvertMap[rune(byteText[i*4+1])],
-			})
-			b := binary.BigEndian.Uint32([]byte{
-				0x00,
-				0x00,
-				0x00,
-				uint8(tmp>>8)<<2 | (0x03 & (uint8(tmp>>0) >> 4)),
-			})
+			tmp := uint32(rConvertMap[rune(byteText[i*4+0])])<<8 |
+				uint32(rConvertMap[rune(byteText[i*4+1])])<<0
+			b := uint32(uint8(tmp>>8)<<2 | (0x03 & (uint8(tmp>>0) >> 4)))
 			decoded = append(decoded, rune(uint8(b>>0)))
 		} else if mod == 3 {
-			tmp := binary.BigEndian.Uint32([]byte{
-				0x00,
-				rConvertMap[rune(byteText[i*4+0])],
-				rConvertMap[rune(byteText[i*4+1])],
-				rConvertMap[rune(byteText[i*4+2])],
-			})
-			b := binary.BigEndian.Uint32([]byte{
-				0x00,
-				0x00,
-				uint8(tmp>>16)<<2 | (0x03 & (uint8(tmp>>8) >> 4)),
-				uint8(tmp>>8)<<4 | (0x0f & (uint8(tmp>>0) >> 2)),
-			})
+			tmp := uint32(rConvertMap[rune(byteText[i*4+0])])<<16 |
+				uint32(rConvertMap[rune(byteText[i*4+1])])<<8 |
+				uint32(rConvertMap[rune(byteText[i*4+2])])<<0
+			b := uint32(uint8(tmp>>16)<<2|(0x03&(uint8(tmp>>8)>>4)))<<8 |
+				uint32(uint8(tmp>>8)<<4|(0x0f&(uint8(tmp>>0)>>2)))<<0
 			decoded = append(decoded, rune(uint8(b>>8)))
 			decoded = append(decoded, rune(uint8(b>>0)))
 		}
